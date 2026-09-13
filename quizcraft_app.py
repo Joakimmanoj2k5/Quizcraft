@@ -1,10 +1,10 @@
 """Streamlit UI for testing QuizCraft RAG quiz generation."""
-
 from __future__ import annotations
 
 import html
 import os
 import tempfile
+import uuid
 
 import streamlit as st
 
@@ -144,13 +144,17 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # Heavy backend resources — cached so they survive Streamlit reruns
 # ---------------------------------------------------------------------------
+if "rag_collection_name" not in st.session_state:
+    st.session_state.rag_collection_name = (
+        f"streamlit_quizcraft_{uuid.uuid4().hex}"
+    )
 @st.cache_resource
 def get_embedder():
     return Embedder()
 
 @st.cache_resource
-def get_vector_store():
-    return VectorStore(collection_name="streamlit_quizcraft")
+def get_vector_store(collection_name: str):
+    return VectorStore(collection_name=collection_name)
 
 @st.cache_resource
 def get_retriever(_embedder, _vector_store):
@@ -187,11 +191,24 @@ def render_baseline_question_card(index: int, item: dict) -> None:
 def process_uploaded_files():
     """Process every uploaded file through the RAG pipeline."""
     uploaded_files = st.session_state.get("rag_files")
+
     if not uploaded_files:
+        vector_store = get_vector_store(
+            st.session_state.rag_collection_name
+        )
+        vector_store.clear()
+
+        st.session_state.file_indexed = False
+        st.session_state.chunk_map = {}
+        st.session_state.indexed_filenames = []
+
+        clear_quiz()
         return
 
     embedder = get_embedder()
-    vector_store = get_vector_store()
+    vector_store = get_vector_store(
+        st.session_state.rag_collection_name
+    )
     retriever = get_retriever(embedder, vector_store)
 
     with st.spinner("Processing documents…"):
@@ -205,28 +222,47 @@ def process_uploaded_files():
 
             for uploaded_file in uploaded_files:
                 with tempfile.NamedTemporaryFile(
-                    delete=False, suffix=f"_{uploaded_file.name}"
+                    delete=False,
+                    suffix=f"_{uploaded_file.name}",
                 ) as tmp:
                     tmp.write(uploaded_file.getbuffer())
                     tmp_path = tmp.name
 
                 try:
                     document = load_document(tmp_path)
-                    # Store original filename instead of tempfile name
+
+                    # Keep the original filename for display/source metadata.
                     document.source = uploaded_file.name
-                    chunks = chunk_document(document)
+
+                    chunks = chunk_document(
+                        document,
+                        chunk_size=800,
+                        overlap=150,
+                    )
+
                     if not chunks:
-                        st.warning(f"No text extracted from {uploaded_file.name}.")
+                        st.warning(
+                            f"No text extracted from {uploaded_file.name}."
+                        )
                         continue
 
+                    # Give every upload a unique ID so duplicate filenames
+                    # cannot produce duplicate chunk IDs.
+                    upload_id = uuid.uuid4().hex[:12]
+
                     for c in chunks:
+                        c["chunk_id"] = f"{upload_id}_{c['chunk_id']}"
                         all_chunk_map[c["chunk_id"]] = c
 
                     retriever.index_documents(chunks)
                     total_chunks += len(chunks)
                     filenames.append(uploaded_file.name)
+
                 except (FileNotFoundError, ValueError) as e:
-                    st.error(f"Error processing {uploaded_file.name}: {e}")
+                    st.error(
+                        f"Error processing {uploaded_file.name}: {e}"
+                    )
+
                 finally:
                     if os.path.exists(tmp_path):
                         os.remove(tmp_path)
@@ -235,8 +271,10 @@ def process_uploaded_files():
                 st.session_state.chunk_map = all_chunk_map
                 st.session_state.file_indexed = True
                 st.session_state.indexed_filenames = filenames
+
                 st.success(
-                    f"Indexed {total_chunks} chunks from: {', '.join(filenames)}"
+                    f"Indexed {total_chunks} chunks from: "
+                    f"{', '.join(filenames)}"
                 )
             else:
                 st.session_state.file_indexed = False
@@ -255,6 +293,11 @@ def reset_quiz_answers():
     st.session_state.quiz_submitted = False
     st.session_state.user_answers = {}
     st.session_state.quiz_results = None
+
+    # Remove Streamlit radio-widget state so Retake really starts fresh.
+    for key in list(st.session_state.keys()):
+        if key.startswith("q_"):
+            del st.session_state[key]
 
 
 def clear_quiz():
@@ -296,7 +339,9 @@ def _generate_rag_quiz(api_key: str) -> None:
         return
 
     embedder = get_embedder()
-    vector_store = get_vector_store()
+    vector_store = get_vector_store(
+        st.session_state.rag_collection_name
+    )
     retriever = get_retriever(embedder, vector_store)
 
     with st.spinner("Retrieving context and generating quiz…"):

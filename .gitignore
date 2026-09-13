@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.streamlit/secrets.toml
+
+# Separate project in this shared workspace; not part of QuizCraft.
+campusflow/

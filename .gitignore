@@ -6,3 +6,5 @@ __pycache__/
 
 # Separate project in this shared workspace; not part of QuizCraft.
 campusflow/
+
+data/chroma/

@@ -1,3 +1,8 @@
 google-genai>=2.23.0
 pydantic>=2.0.0
 streamlit>=1.63.0
+pypdf
+sentence-transformers
+chromadb
+python-dotenv
+pytest

@@ -236,8 +236,8 @@ def process_uploaded_files():
 
                     chunks = chunk_document(
                         document,
-                        chunk_size=800,
-                        overlap=150,
+                        chunk_size=st.session_state.get("chunk_size", 800),
+                        overlap=st.session_state.get("chunk_overlap", 150),
                     )
 
                     if not chunks:
@@ -347,7 +347,7 @@ def _generate_rag_quiz(api_key: str) -> None:
     with st.spinner("Retrieving context and generating quiz…"):
         context_chunks = retriever.get_relevant_context(
             query=topic,
-            top_k=st.session_state.count * 2,
+            top_k=st.session_state.get("retrieval_k", st.session_state.count * 2),
         )
 
         if not context_chunks:
@@ -416,6 +416,27 @@ with st.sidebar:
     st.text_input("Topic", value="Photosynthesis", key="topic")
     st.selectbox("Difficulty", ["Easy", "Medium", "Hard"], index=1, key="difficulty")
     st.slider("Question count", min_value=1, max_value=10, value=5, key="count")
+    if st.session_state.get("mode") == "Grounded RAG":
+        with st.expander("Advanced RAG settings"):
+            st.slider(
+                "Chunk size (characters)",
+                min_value=200, max_value=2000, value=800, step=100,
+                key="chunk_size",
+                help="Larger chunks give more context per question but reduce retrieval precision.",
+            )
+            st.slider(
+                "Chunk overlap (characters)",
+                min_value=0, max_value=500, value=150, step=50,
+                key="chunk_overlap",
+                help="Overlap helps avoid cutting a fact in half at a chunk boundary.",
+            )
+            st.slider(
+                "Chunks retrieved per quiz",
+                min_value=2, max_value=20, value=10, step=1,
+                key="retrieval_k",
+                help="More retrieved chunks give the LLM more material to draw from.",
+            )
+            st.caption("Changing chunk size/overlap only applies on your next file upload — re-upload to reprocess.")
     st.button(
         "Generate Quiz",
         type="primary",

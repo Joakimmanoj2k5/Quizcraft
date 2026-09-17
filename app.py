@@ -67,7 +67,7 @@ def _page_shell() -> str:
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>QuizCraft</title>
+        <title>Quiz Generation App</title>
         <style>
           :root {
             color-scheme: dark;
@@ -214,13 +214,11 @@ def _page_shell() -> str:
         <main class="wrap">
           <section class="hero">
             <div class="intro">
-              <div class="kicker">QuizCraft RAG</div>
-              <h1>Deploy-ready quiz generation on Vercel.</h1>
-              <p class="lead">Generate schema-validated multiple-choice quizzes from retrieved context or from general knowledge. The app uses your Vercel <strong>GEMINI_API_KEY</strong> at runtime, so you can deploy it as a normal Python app.</p>
+              <div class="kicker">Quiz app</div>
+              <h1>Quiz Generation App</h1>
+              <p class="lead">Create a quiz by choosing a topic, difficulty, and question count. Add source text for grounded questions, or use baseline mode for general questions.</p>
               <div class="status">
-                <strong>API endpoint:</strong> <code>/api/generate</code><br />
-                <strong>Mode:</strong> Grounded RAG or Baseline<br />
-                <strong>Output:</strong> strict JSON quiz payload
+                Keep the form settings on the right and click Generate quiz.
               </div>
             </div>
 

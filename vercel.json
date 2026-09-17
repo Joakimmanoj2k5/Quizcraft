@@ -3,7 +3,7 @@
   "functions": {
     "app.py": {
       "maxDuration": 30,
-      "excludeFiles": "{campusflow/**,tests/**,tmp/**,**/__pycache__/**,**/*.pyc,quizcraft_app.py,README.md,.gitignore}"
+      "excludeFiles": "{campusflow/**,tests/**,tmp/**,.venv/**,**/.venv/**,**/__pycache__/**,**/*.pyc,quizcraft_app.py,requirements-local.txt,README.md,.gitignore}"
     }
   }
 }

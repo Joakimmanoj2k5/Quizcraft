@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 .env
 .streamlit/secrets.toml
+.DS_Store
+tmp/
 
 # Separate project in this shared workspace; not part of QuizCraft.
 campusflow/

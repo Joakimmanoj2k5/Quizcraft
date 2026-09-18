@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from schemas import QuizResponse
 
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 
 
 class GenerationError(RuntimeError):
